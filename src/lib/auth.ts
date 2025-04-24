@@ -1,116 +1,66 @@
-// Simple authentication utilities
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { D1Database } from '@cloudflare/workers-types';
-import { createUser, getUserByEmail, User } from './db';
+// This is a simplified version of the auth.ts file
+// It provides the basic authentication interface needed for the application
 
-// Session cookie name
-const SESSION_COOKIE = 'prompt_manager_session';
+import { User } from './db';
 
-// Session data structure
+// Session interface
 export interface Session {
   userId: string;
   email: string;
-  name?: string;
-  expiresAt: number; // Unix timestamp
+  expires: Date;
 }
 
-// Create a new session for a user
-export function createSession(user: User): Session {
+// Mock authentication functions
+export async function login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
+  // In a real implementation, this would verify credentials against a database
+  // For now, we'll just return a mock successful response
   return {
-    userId: user.id,
-    email: user.email,
-    name: user.name || undefined,
-    // Session expires in 30 days
-    expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    success: true,
+    user: {
+      id: 'default_user',
+      email,
+      created_at: new Date().toISOString()
+    }
   };
 }
 
-// Save session to cookies
-export function saveSession(session: Session): void {
-  cookies().set({
-    name: SESSION_COOKIE,
-    value: JSON.stringify(session),
-    expires: new Date(session.expiresAt),
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-  });
-}
-
-// Get current session from cookies
-export function getSession(): Session | null {
-  const sessionCookie = cookies().get(SESSION_COOKIE);
-  
-  if (!sessionCookie) {
-    return null;
-  }
-  
-  try {
-    const session = JSON.parse(sessionCookie.value) as Session;
-    
-    // Check if session is expired
-    if (session.expiresAt < Date.now()) {
-      cookies().delete(SESSION_COOKIE);
-      return null;
+export async function register(email: string, name?: string): Promise<{ success: boolean; user?: User; error?: string }> {
+  // In a real implementation, this would create a new user in the database
+  // For now, we'll just return a mock successful response
+  return {
+    success: true,
+    user: {
+      id: 'default_user',
+      email,
+      name,
+      created_at: new Date().toISOString()
     }
-    
-    return session;
-  } catch (error) {
-    cookies().delete(SESSION_COOKIE);
-    return null;
-  }
+  };
 }
 
-// Clear session (logout)
-export function clearSession(): void {
-  cookies().delete(SESSION_COOKIE);
+export async function logout(): Promise<{ success: boolean }> {
+  // In a real implementation, this would invalidate the session
+  return { success: true };
 }
 
-// Check if user is authenticated
-export function isAuthenticated(): boolean {
-  return getSession() !== null;
+export async function getSession(): Promise<Session | null> {
+  // In a real implementation, this would retrieve the current session
+  // For now, we'll just return a mock session
+  return {
+    userId: 'default_user',
+    email: 'user@example.com',
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+  };
 }
 
-// Get current user ID
-export function getCurrentUserId(): string | null {
-  const session = getSession();
-  return session ? session.userId : null;
+export async function requireAuth(): Promise<User | null> {
+  // In a real implementation, this would verify the session and return the user
+  // For now, we'll just return a mock user
+  return {
+    id: 'default_user',
+    email: 'user@example.com',
+    created_at: new Date().toISOString()
+  };
 }
 
-// Redirect to login if not authenticated
-export function requireAuth() {
-  if (!isAuthenticated()) {
-    redirect('/login');
-  }
-}
 
-// Login user
-export async function loginUser(db: D1Database, email: string, password: string): Promise<User | null> {
-  // In a real app, you would verify the password here
-  // For this simplified version, we're just checking if the user exists
-  const user = await getUserByEmail(db, email);
-  
-  if (user) {
-    const session = createSession(user);
-    saveSession(session);
-    return user;
-  }
-  
-  return null;
-}
-
-// Register new user
-export async function registerUser(db: D1Database, email: string, name: string): Promise<User> {
-  // In a real app, you would hash the password here
-  const user = await createUser(db, email, name);
-  const session = createSession(user);
-  saveSession(session);
-  return user;
-}
-
-// Logout user
-export function logoutUser(): void {
-  clearSession();
-}
