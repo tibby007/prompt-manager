@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Tag } from '@/lib/db';
