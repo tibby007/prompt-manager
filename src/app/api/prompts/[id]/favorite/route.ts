@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  return NextResponse.json({ id: 'mock-id', title: 'Example Prompt', content: 'Prompt content' });
+export async function POST() {
+  return NextResponse.json({ success: true, favorited: true });
 }
-
