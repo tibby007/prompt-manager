@@ -1,5 +1,5 @@
 export function getCloudflareContext(req: any) {
-  return {}; // Mocked CF context
+  return { db: {} };  // Ensure this is correctly returning an object with db.
 }
 
 export async function getPromptById(id: string) {
